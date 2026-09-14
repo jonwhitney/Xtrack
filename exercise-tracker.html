@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Gym Tracker</title>
+<style>
+  :root {
+    --bg: #0f1115;
+    --card: #1a1d24;
+    --accent: #5ee0a5;
+    --accent-dim: #2b7a58;
+    --text: #f0f2f5;
+    --sub: #8a8f98;
+    --border: #2a2e37;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  body {
+    margin: 0;
+    font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+    padding: 16px 14px 40px;
+  }
+  h1 {
+    font-size: 20px;
+    font-weight: 700;
+    margin: 4px 0 16px;
+    text-align: center;
+  }
+  .day-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 16px;
+  }
+  .day-tab {
+    flex: 1;
+    padding: 10px 0;
+    text-align: center;
+    border-radius: 10px;
+    background: var(--card);
+    border: 1px solid var(--border);
+    font-weight: 600;
+    font-size: 14px;
+    color: var(--sub);
+    cursor: pointer;
+    user-select: none;
+  }
+  .day-tab.active {
+    background: var(--accent-dim);
+    color: var(--accent);
+    border-color: var(--accent);
+  }
+  .exercise-list {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-bottom: 20px;
+  }
+  .exercise-item {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    cursor: pointer;
+  }
+  .exercise-item.selected {
+    border-color: var(--accent);
+    background: #16241d;
+  }
+  .ex-name {
+    font-size: 15px;
+    font-weight: 600;
+  }
+  .ex-meta {
+    font-size: 12.5px;
+    color: var(--sub);
+    margin-top: 2px;
+  }
+  .note-flag {
+    display: inline-block;
+    margin-left: 6px;
+    width: 6px;
+    height: 6px;
+    border-radius: 50%;
+    background: var(--accent);
+    vertical-align: middle;
+  }
+  .detail-panel {
+    background: var(--card);
+    border: 1px solid var(--accent);
+    border-radius: 14px;
+    padding: 16px;
+    position: sticky;
+    bottom: 12px;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  }
+  .detail-panel.empty {
+    display: none;
+  }
+  .detail-name {
+    font-size: 17px;
+    font-weight: 700;
+    margin-bottom: 8px;
+  }
+  .detail-row {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .detail-pill {
+    background: #22262f;
+    border-radius: 8px;
+    padding: 6px 10px;
+    font-size: 13px;
+    flex: 1;
+    text-align: center;
+  }
+  .detail-pill .label {
+    display: block;
+    font-size: 10px;
+    color: var(--sub);
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    margin-bottom: 2px;
+  }
+  .detail-notes {
+    font-size: 14px;
+    line-height: 1.45;
+    color: #d8dbe2;
+    background: #12151b;
+    border-radius: 8px;
+    padding: 10px 12px;
+    border-left: 3px solid var(--accent);
+  }
+  .no-notes {
+    font-size: 13px;
+    color: var(--sub);
+    font-style: italic;
+  }
+  .top-tabs {
+    display: flex;
+    gap: 8px;
+    margin-bottom: 12px;
+  }
+  .top-tab {
+    flex: 1;
+    padding: 9px 0;
+    text-align: center;
+    border-radius: 10px;
+    background: #12151b;
+    border: 1px solid var(--border);
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--sub);
+    cursor: pointer;
+  }
+  .top-tab.active {
+    background: #1c2b23;
+    color: var(--accent);
+    border-color: var(--accent-dim);
+  }
+  .log-btn {
+    width: 100%;
+    margin-top: 10px;
+    padding: 12px 0;
+    border: none;
+    border-radius: 10px;
+    background: var(--accent);
+    color: #08130e;
+    font-weight: 700;
+    font-size: 15px;
+    cursor: pointer;
+  }
+  .log-btn:active { opacity: 0.85; }
+  .weight-input {
+    width: 100%;
+    background: #12151b;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    color: var(--text);
+    padding: 8px 10px;
+    font-size: 14px;
+    margin-top: 8px;
+  }
+  .history-day-group {
+    margin-bottom: 18px;
+  }
+  .history-date {
+    font-size: 13px;
+    font-weight: 700;
+    color: var(--accent);
+    margin-bottom: 6px;
+  }
+  .history-entry {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 10px 12px;
+    margin-bottom: 6px;
+    font-size: 13.5px;
+  }
+  .history-entry .h-name { font-weight: 600; }
+  .history-entry .h-meta { color: var(--sub); margin-top: 2px; }
+  .empty-history {
+    color: var(--sub);
+    font-size: 14px;
+    text-align: center;
+    margin-top: 30px;
+  }
+  .clear-btn {
+    margin-top: 16px;
+    width: 100%;
+    padding: 10px 0;
+    border-radius: 10px;
+    background: transparent;
+    border: 1px solid #4a2a2a;
+    color: #d98a8a;
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .sync-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 12px 14px;
+    margin-bottom: 16px;
+  }
+  .sync-status {
+    font-size: 13px;
+    color: var(--sub);
+    margin-bottom: 8px;
+  }
+  .sync-status.connected { color: var(--accent); }
+  .sync-status.pending { color: #e0c05e; }
+  .pill-badge {
+    display: inline-block;
+    font-size: 11px;
+    padding: 2px 7px;
+    border-radius: 6px;
+    margin-left: 6px;
+    background: #2b7a58;
+    color: #bdf5d8;
+  }
+  .pill-badge.pending { background: #6b5a1e; color: #f5e3bd; }
+</style>
+</head>
+<body>
+
+<h1>Gym Tracker</h1>
+
+<div class="top-tabs" id="topTabs"></div>
+
+<div id="trackView">
+  <div class="day-tabs" id="dayTabs"></div>
+  <div class="exercise-list" id="exerciseList"></div>
+  <div class="detail-panel empty" id="detailPanel">
+    <div class="detail-name" id="detailName"></div>
+    <div class="detail-row" id="detailRow"></div>
+    <div id="detailNotesWrap"></div>
+    <input type="text" class="weight-input" id="weightInput" placeholder="Weight used today (optional)">
+    <button class="log-btn" id="logBtn">Log this set</button>
+  </div>
+</div>
+
+<div id="historyView" style="display:none;">
+  <div class="sync-box" id="syncBox">
+    <div class="sync-status" id="syncStatus">Not connected to Google Sheet</div>
+    <input type="text" class="weight-input" id="syncUrlInput" placeholder="Paste your Apps Script Web App URL">
+    <button class="log-btn" id="saveSyncBtn" style="margin-top:8px;">Save & Connect</button>
+    <button class="clear-btn" id="pullBtn" style="border-color:var(--accent-dim);color:var(--accent);margin-top:8px;">Pull from Sheet</button>
+  </div>
+  <div id="historyList"></div>
+  <button class="clear-btn" id="backupBtn" style="border-color:var(--accent-dim);color:var(--accent);">Download backup (.json)</button>
+  <button class="clear-btn" id="restoreBtn" style="border-color:var(--accent-dim);color:var(--accent);">Restore from backup</button>
+  <input type="file" id="restoreFile" accept="application/json" style="display:none;">
+  <button class="clear-btn" id="clearBtn">Clear all history</button>
+</div>
+
+<script>
+const data = {
+  "Day 1": [
+    { name: "Hip Bridging", setRep: "3x15-18", weight: "15-20lbs", notes: "Knees forward/hips up" },
+    { name: "Squat", setRep: "3x15-20", weight: "20lbs", notes: "" },
+    { name: "TRX Row", setRep: "3x10-12", weight: "", notes: "" },
+    { name: "Stationary Arms Dead Bug", setRep: "3x8-10/side", weight: "", notes: "Arms at 45 and belly button in" },
+    { name: "Chest Press With Cable", setRep: "3x12-15", weight: "18lbs", notes: "" },
+    { name: "Single Leg Hinge (RDL)", setRep: "3x8-10/side", weight: "12lbs/hand", notes: "Tap other toe for support" },
+    { name: "Back Fly", setRep: "3x12-15", weight: "12lbs", notes: "" },
+    { name: "Shoulder Fly", setRep: "3x8-10", weight: "8lbs", notes: "Can we review? I'm doing it wrong" }
+  ],
+  "Day 2": [
+    { name: "TRX Pushup", setRep: "", weight: "", notes: "Arms slightly wider/ move from shoulder blades and chest" },
+    { name: "Side Leg Lift", setRep: "3x10/side", weight: "", notes: "45 degree angle for feet/ side crunch" },
+    { name: "One Leg Press Up", setRep: "3x8-10/side", weight: "10lbs", notes: "Box with 3 risers/side" },
+    { name: "Knee Pinch Extension", setRep: "3x14-16", weight: "", notes: "With ball/ either have feet resting on ground or knees lifted up" },
+    { name: "Chest Fly", setRep: "3x10", weight: "12lbs", notes: "don't open too wide/ open from shoulder blades" },
+    { name: "Kettle Bell Core Extension (like dead bug)", setRep: "3x10-12", weight: "10-15lbs", notes: "Arms for now/ add legs extension when ready/ use lats" },
+    { name: "Hamstring Bridge (feet on ball optional)", setRep: "3x10", weight: "", notes: "Don't lift hips too high" },
+    { name: "Calf Press Up Machine", setRep: "3x10", weight: "25lbs/side", notes: "Downstairs" },
+    { name: "Cable Two Arm Row Seated", setRep: "3x10-12", weight: "70lbs", notes: "Tall Posture/ squeeze shoulder blades" }
+  ],
+  "Day 3": [
+    { name: "Cable Internal/External Rotation", setRep: "3x8-10/side", weight: "4-5lbs", notes: "Below Shoulder Height" },
+    { name: "One Arm Lat Pulldown", setRep: "3x10/side", weight: "30lbs", notes: "Single Handle Pulldown Machine/ Pull Slightly Out" },
+    { name: "Single Leg Stand Up", setRep: "3x8/side", weight: "", notes: "Pink Pad/ weight on opposite shoulder" },
+    { name: "Cable Chest Fly", setRep: "3x8-10", weight: "12lbs", notes: "Arms Straight with slight elbow bend/ move from shoulder blades" },
+    { name: "TRX Shoulder Stretch", setRep: "3x10-12", weight: "", notes: "Walk forward with arms out until stretched" },
+    { name: "Deadlift", setRep: "3x10", weight: "20lbs/hand", notes: "Hips back/ slight knee bend/ keep back flat" },
+    { name: "Russian Twist", setRep: "3x8-10/side", weight: "15lbs", notes: "Lean Back/ extend arms/ go slow/ don't go past 45 degree angles" },
+    { name: "Lunges (reverse)", setRep: "3x6-8/leg", weight: "15lbs", notes: "Step back/ lean over front leg" },
+    { name: "Weighted Bridge", setRep: "3x10-12", weight: "25lbs", notes: "" },
+    { name: "Elbow Care", setRep: "", weight: "", notes: "" },
+    { name: "TRX Angel", setRep: "", weight: "", notes: "" },
+    { name: "Biceps Stretch (don't lock out elbow)", setRep: "", weight: "", notes: "" },
+    { name: "TRX Leaning Grip (Palms Down)", setRep: "", weight: "", notes: "" }
+  ]
+};
+
+let currentDay = "Day 1";
+let selectedIdx = null;
+let currentView = "track";
+
+const dayTabsEl = document.getElementById('dayTabs');
+const listEl = document.getElementById('exerciseList');
+const panel = document.getElementById('detailPanel');
+const detailName = document.getElementById('detailName');
+const detailRow = document.getElementById('detailRow');
+const detailNotesWrap = document.getElementById('detailNotesWrap');
+const weightInput = document.getElementById('weightInput');
+const logBtn = document.getElementById('logBtn');
+const topTabsEl = document.getElementById('topTabs');
+const trackView = document.getElementById('trackView');
+const historyView = document.getElementById('historyView');
+const historyListEl = document.getElementById('historyList');
+const clearBtn = document.getElementById('clearBtn');
+
+const STORAGE_KEY = 'gym-tracker-history';
+const SYNCED_KEY = 'gym-tracker-synced-flags'; // date|name keys already pushed
+const SYNC_URL_KEY = 'gym-tracker-sync-url';
+
+const syncBox = document.getElementById('syncBox');
+const syncStatus = document.getElementById('syncStatus');
+const syncUrlInput = document.getElementById('syncUrlInput');
+const saveSyncBtn = document.getElementById('saveSyncBtn');
+const pullBtn = document.getElementById('pullBtn');
+
+// Ask the browser not to evict this site's storage under pressure.
+if (navigator.storage && navigator.storage.persist) {
+  navigator.storage.persist().catch(() => {});
+}
+
+function getSyncUrl() {
+  return localStorage.getItem(SYNC_URL_KEY) || '';
+}
+
+function setSyncUrl(url) {
+  localStorage.setItem(SYNC_URL_KEY, url);
+}
+
+function loadHistory() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function saveHistory(entries) {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(entries));
+  } catch (e) {
+    console.error('Could not save history', e);
+    alert('Could not save — your device storage may be full.');
+  }
+}
+
+function entryKey(entry) {
+  return entry.date + '|' + entry.name;
+}
+
+function getSyncedSet() {
+  try {
+    const raw = localStorage.getItem(SYNCED_KEY);
+    return new Set(raw ? JSON.parse(raw) : []);
+  } catch (e) {
+    return new Set();
+  }
+}
+
+function saveSyncedSet(set) {
+  localStorage.setItem(SYNCED_KEY, JSON.stringify(Array.from(set)));
+}
+
+function pendingCount() {
+  const synced = getSyncedSet();
+  return loadHistory().filter(e => !synced.has(entryKey(e))).length;
+}
+
+function updateSyncStatus() {
+  const url = getSyncUrl();
+  syncUrlInput.value = url;
+  if (!url) {
+    syncStatus.innerHTML = 'Not connected to a Google Sheet yet';
+    syncStatus.className = 'sync-status';
+    return;
+  }
+  const pending = pendingCount();
+  if (pending === 0) {
+    syncStatus.innerHTML = 'Connected <span class="pill-badge">all synced</span>';
+    syncStatus.className = 'sync-status connected';
+  } else {
+    syncStatus.innerHTML = 'Connected <span class="pill-badge pending">' + pending + ' pending sync</span>';
+    syncStatus.className = 'sync-status pending';
+  }
+}
+
+// Push any un-synced entries to the Sheet. Safe to call repeatedly;
+// entries already marked synced are skipped. Uses no-cors mode since
+// Apps Script web apps don't return normal CORS headers — we can't read
+// the response, but the write still goes through, so we optimistically
+// mark as synced and let a manual "Restore/pull" reconcile if needed.
+async function pushPending() {
+  const url = getSyncUrl();
+  if (!url || !navigator.onLine) return;
+  const history = loadHistory();
+  const synced = getSyncedSet();
+  const pending = history.filter(e => !synced.has(entryKey(e)));
+  if (pending.length === 0) return;
+
+  try {
+    await fetch(url, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify(pending)
+    });
+    pending.forEach(e => synced.add(entryKey(e)));
+    saveSyncedSet(synced);
+    updateSyncStatus();
+    if (currentView === 'history') renderHistory();
+  } catch (err) {
+    console.error('Sync push failed', err);
+  }
+}
+
+// Pull the full history from the Sheet (all devices' entries) and merge
+// it into local storage. Apps Script GET responses do include CORS
+// headers on "Anyone" deployments, so this can use a normal fetch,
+// unlike the POST push above.
+async function pullFromSheet() {
+  const url = getSyncUrl();
+  if (!url) {
+    alert('Connect a Sheet URL first.');
+    return;
+  }
+  pullBtn.textContent = 'Pulling…';
+  try {
+    const res = await fetch(url, { method: 'GET' });
+    if (!res.ok) throw new Error('Bad response: ' + res.status);
+    const remote = await res.json();
+    if (!Array.isArray(remote)) throw new Error('Unexpected response shape');
+
+    const existing = loadHistory();
+    const merged = existing.concat(remote);
+    const seen = new Set();
+    const deduped = merged.filter(e => {
+      const key = entryKey(e);
+      if (seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+    deduped.sort((a, b) => new Date(b.date) - new Date(a.date));
+    saveHistory(deduped);
+
+    // Everything that exists in the Sheet is, by definition, already
+    // synced — mark those keys so we don't try to push them back up.
+    const synced = getSyncedSet();
+    remote.forEach(e => synced.add(entryKey(e)));
+    saveSyncedSet(synced);
+
+    renderHistory();
+    updateSyncStatus();
+    pullBtn.textContent = 'Pull from Sheet';
+    alert('Pulled ' + remote.length + ' entries from the Sheet. Merged with local history (duplicates skipped).');
+  } catch (err) {
+    console.error('Pull failed', err);
+    pullBtn.textContent = 'Pull from Sheet';
+    alert('Could not pull from the Sheet. Check the URL and your connection, then try again.');
+  }
+}
+
+function downloadBackup() {
+  const history = loadHistory();
+  const blob = new Blob([JSON.stringify(history, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().slice(0, 10);
+  a.href = url;
+  a.download = `gym-tracker-backup-${stamp}.json`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+}
+
+function restoreFromFile(file) {
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const parsed = JSON.parse(reader.result);
+      if (!Array.isArray(parsed)) throw new Error('Invalid format');
+      const existing = loadHistory();
+      const merged = existing.concat(parsed);
+      const seen = new Set();
+      const deduped = merged.filter(e => {
+        const key = entryKey(e);
+        if (seen.has(key)) return false;
+        seen.add(key);
+        return true;
+      });
+      deduped.sort((a, b) => new Date(b.date) - new Date(a.date));
+      saveHistory(deduped);
+      renderHistory();
+      alert('Backup restored: ' + parsed.length + ' entries merged in.');
+    } catch (e) {
+      alert('That file did not look like a valid backup.');
+    }
+  };
+  reader.readAsText(file);
+}
+
+function logEntry() {
+  if (selectedIdx === null) return;
+  const ex = data[currentDay][selectedIdx];
+  const history = loadHistory();
+  const now = new Date();
+  history.unshift({
+    date: now.toISOString(),
+    day: currentDay,
+    name: ex.name,
+    setRep: ex.setRep,
+    plannedWeight: ex.weight,
+    loggedWeight: weightInput.value.trim()
+  });
+  saveHistory(history);
+  weightInput.value = '';
+  logBtn.textContent = 'Logged ✓';
+  setTimeout(() => { logBtn.textContent = 'Log this set'; }, 1200);
+  pushPending();
+}
+
+function renderTopTabs() {
+  topTabsEl.innerHTML = '';
+  [['track', 'Workout'], ['history', 'History']].forEach(([key, label]) => {
+    const tab = document.createElement('div');
+    tab.className = 'top-tab' + (currentView === key ? ' active' : '');
+    tab.textContent = label;
+    tab.onclick = () => {
+      currentView = key;
+      trackView.style.display = key === 'track' ? '' : 'none';
+      historyView.style.display = key === 'history' ? '' : 'none';
+      renderTopTabs();
+      if (key === 'history') {
+        renderHistory();
+        updateSyncStatus();
+      }
+    };
+    topTabsEl.appendChild(tab);
+  });
+}
+
+function formatDate(iso) {
+  const d = new Date(iso);
+  return d.toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' }) +
+    ' · ' + d.toLocaleTimeString(undefined, { hour: 'numeric', minute: '2-digit' });
+}
+
+function renderHistory() {
+  const history = loadHistory();
+  if (history.length === 0) {
+    historyListEl.innerHTML = '<div class="empty-history">No workouts logged yet. Select an exercise and tap "Log this set" to start building your history.</div>';
+    return;
+  }
+  // group by calendar day
+  const groups = {};
+  history.forEach(entry => {
+    const dayKey = new Date(entry.date).toDateString();
+    if (!groups[dayKey]) groups[dayKey] = [];
+    groups[dayKey].push(entry);
+  });
+  historyListEl.innerHTML = '';
+  Object.keys(groups).forEach(dayKey => {
+    const group = document.createElement('div');
+    group.className = 'history-day-group';
+    const dateLabel = document.createElement('div');
+    dateLabel.className = 'history-date';
+    dateLabel.textContent = new Date(dayKey).toLocaleDateString(undefined, { weekday: 'long', month: 'short', day: 'numeric' });
+    group.appendChild(dateLabel);
+    groups[dayKey].forEach(entry => {
+      const item = document.createElement('div');
+      item.className = 'history-entry';
+      const weightText = entry.loggedWeight ? entry.loggedWeight : (entry.plannedWeight || '—');
+      item.innerHTML = `
+        <div class="h-name">${entry.name} <span style="color:var(--sub);font-weight:400;">(${entry.day})</span></div>
+        <div class="h-meta">${entry.setRep || 'No set/rep'} · ${weightText} · ${formatDate(entry.date)}</div>
+      `;
+      group.appendChild(item);
+    });
+    historyListEl.appendChild(group);
+  });
+}
+
+clearBtn.onclick = () => {
+  if (confirm('Clear all logged history? This cannot be undone.')) {
+    saveHistory([]);
+    renderHistory();
+  }
+};
+
+const backupBtn = document.getElementById('backupBtn');
+const restoreBtn = document.getElementById('restoreBtn');
+const restoreFile = document.getElementById('restoreFile');
+
+backupBtn.onclick = downloadBackup;
+restoreBtn.onclick = () => restoreFile.click();
+restoreFile.onchange = (e) => {
+  if (e.target.files && e.target.files[0]) {
+    restoreFromFile(e.target.files[0]);
+  }
+  restoreFile.value = '';
+};
+
+saveSyncBtn.onclick = () => {
+  const url = syncUrlInput.value.trim();
+  setSyncUrl(url);
+  updateSyncStatus();
+  if (url) pushPending();
+};
+
+pullBtn.onclick = pullFromSheet;
+
+window.addEventListener('online', pushPending);
+
+logBtn.onclick = logEntry;
+
+function renderTabs() {
+  dayTabsEl.innerHTML = '';
+  Object.keys(data).forEach(day => {
+    const tab = document.createElement('div');
+    tab.className = 'day-tab' + (day === currentDay ? ' active' : '');
+    tab.textContent = day;
+    tab.onclick = () => {
+      currentDay = day;
+      selectedIdx = null;
+      renderTabs();
+      renderList();
+      renderDetail();
+    };
+    dayTabsEl.appendChild(tab);
+  });
+}
+
+function renderList() {
+  listEl.innerHTML = '';
+  data[currentDay].forEach((ex, i) => {
+    const item = document.createElement('div');
+    item.className = 'exercise-item' + (selectedIdx === i ? ' selected' : '');
+    const metaParts = [];
+    if (ex.setRep) metaParts.push(ex.setRep);
+    if (ex.weight) metaParts.push(ex.weight);
+    item.innerHTML = `
+      <div class="ex-name">${ex.name}${ex.notes ? '<span class="note-flag"></span>' : ''}</div>
+      <div class="ex-meta">${metaParts.join(' · ') || 'No set/rep or weight logged'}</div>
+    `;
+    item.onclick = () => {
+      selectedIdx = i;
+      renderList();
+      renderDetail();
+      panel.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    };
+    listEl.appendChild(item);
+  });
+}
+
+function renderDetail() {
+  if (selectedIdx === null) {
+    panel.classList.add('empty');
+    return;
+  }
+  const ex = data[currentDay][selectedIdx];
+  panel.classList.remove('empty');
+  detailName.textContent = ex.name;
+  detailRow.innerHTML = `
+    <div class="detail-pill"><span class="label">Set/Rep</span>${ex.setRep || '—'}</div>
+    <div class="detail-pill"><span class="label">Weight</span>${ex.weight || '—'}</div>
+  `;
+  detailNotesWrap.innerHTML = ex.notes
+    ? `<div class="detail-notes">${ex.notes}</div>`
+    : `<div class="no-notes">No notes for this exercise.</div>`;
+}
+
+renderTopTabs();
+renderTabs();
+renderList();
+renderDetail();
+pushPending();
+</script>
+
+</body>
+</html>
